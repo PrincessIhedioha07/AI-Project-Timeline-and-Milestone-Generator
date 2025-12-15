@@ -7,3 +7,4 @@ flask-cors
 python-dotenv
 Authlib
 requests
+psycopg2-binary

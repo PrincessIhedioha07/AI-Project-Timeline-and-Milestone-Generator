@@ -21,8 +21,21 @@ CORS(app) # Enable CORS
 
 # --- CONFIGURATION ---
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev_key_123')
-app.secret_key = app.config['SECRET_KEY'] # Ensure it is set directly on app object too as requested
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database_v2.db'
+app.secret_key = app.config['SECRET_KEY']
+
+# --- DATABASE CONFIG ---
+# Check for Vercel/Render/Railway Postgres URL
+db_url = os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")
+
+if db_url:
+    # Fix incompatible protocol for SQLAlchemy
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+else:
+    # Fallback to local SQLite
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database_v2.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Google Config
@@ -284,3 +297,7 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True, port=5000)
+else:
+    # Ensure tables are created on production (Vercel) import
+    with app.app_context():
+        db.create_all()
