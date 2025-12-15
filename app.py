@@ -128,14 +128,14 @@ def generate_gemini_timeline(project_desc, deadline_str):
         }}
         """
 
-        # Try Gemini 1.5 Flash (Fast & Efficient)
+        # Try Gemini 2.5 Flash Lite (Requested)
         try:
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-2.5-flash-lite')
             response = model.generate_content(prompt)
         except:
-            # Fallback to Gemini Pro (Stable)
-            print("Fallback to gemini-pro triggered.")
-            model = genai.GenerativeModel('gemini-pro') 
+            # Fallback to Gemini 2.0 Flash Lite
+            print("Fallback to gemini-2.0-flash-lite triggered.")
+            model = genai.GenerativeModel('gemini-2.0-flash-lite') 
             response = model.generate_content(prompt)
             
         # Extract JSON from potential markdown code blocks
