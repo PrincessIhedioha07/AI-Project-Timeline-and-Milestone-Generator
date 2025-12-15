@@ -126,7 +126,7 @@
         <!-- Scrollable Nav -->
         <div class="flex-1 sidebar-scroll overflow-y-auto py-4">
             <div class="px-4 mb-6">
-                <button onclick="location.reload()"
+                <button onclick="app.resetView()"
                     class="w-full flex items-center gap-3 px-3 py-2 text-white/90 bg-brand-purple rounded-lg hover:bg-brand-purple-dark transition-colors font-semibold">
                     <span class="material-symbols-outlined text-[20px]">add</span>
                     New Roadmap
@@ -202,7 +202,8 @@
         class="flex-1 flex flex-col bg-white/80 dark:bg-slate-900/60 backdrop-blur-md overflow-hidden relative z-10 transition-colors duration-300">
 
         <!-- Header -->
-        <header class="h-16 bg-surface border-b border-border-light flex items-center justify-between px-6 shrink-0">
+        <header
+            class="h-16 bg-surface border-b border-border-light flex items-center justify-between px-6 shrink-0 relative z-30">
             <div class="flex items-center gap-4">
                 <h2 class="text-xl font-bold text-text-main" id="pageTitle">New Roadmap</h2>
             </div>
@@ -410,11 +411,11 @@
                         Export Timeline
                     </button>
                 </div>
-            </div>
 
-            <!-- Timeline List -->
-            <div class="relative pl-6 border-l-2 border-border-light ml-4 space-y-8" id="timelineContainer">
-                <!-- Dynamic Cards Go Here -->
+                <!-- Timeline List (Moved Inside) -->
+                <div class="relative pl-6 border-l-2 border-border-light ml-4 space-y-8 mt-8" id="timelineContainer">
+                    <!-- Dynamic Cards Go Here -->
+                </div>
             </div>
 
         </div>

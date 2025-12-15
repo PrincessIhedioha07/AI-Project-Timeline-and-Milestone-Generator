@@ -222,11 +222,32 @@ const app = {
         });
     },
 
+    resetView: () => {
+        // Soft reset for New Roadmap
+        document.getElementById('inputSection').classList.remove('hidden');
+        document.getElementById('resultSection').classList.add('hidden');
+        document.getElementById('templatesSection').classList.add('hidden');
+
+        // Clear data
+        app.currentData = null;
+        document.getElementById('timelineContainer').innerHTML = '';
+        document.getElementById('projectDesc').value = '';
+        document.getElementById('deadline').value = '';
+
+        // Reset Title
+        document.getElementById('pageTitle').innerText = "New Roadmap";
+    },
+
     showTemplates: () => {
         document.getElementById('inputSection').classList.add('hidden');
         document.getElementById('resultSection').classList.add('hidden');
         document.getElementById('templatesSection').classList.remove('hidden');
-        document.getElementById('pageTitle').innerText = "Templates library";
+
+        // Clean up ghost content
+        document.getElementById('timelineContainer').innerHTML = '';
+
+        // Update Title
+        document.getElementById('pageTitle').innerText = "Templates Library";
     },
 
     loadTemplate: (template) => {
@@ -393,6 +414,7 @@ const app = {
 
             document.getElementById('inputSection').classList.add('hidden');
             document.getElementById('resultSection').classList.remove('hidden');
+            document.getElementById('pageTitle').innerText = data.project_title || "Project Details";
             app.renderResults(data);
             app.showNotification("Project loaded", "success");
         } catch (e) { console.error(e); app.showNotification("Failed to load project details", "error"); }
