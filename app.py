@@ -13,11 +13,15 @@ from authlib.integrations.flask_client import OAuth
 # Load environment variables
 load_dotenv()
 
+# Allow insecure transport for local testing
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 app = Flask(__name__)
 CORS(app) # Enable CORS
 
 # --- CONFIGURATION ---
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your_default_secret_key')
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev_key_123')
+app.secret_key = app.config['SECRET_KEY'] # Ensure it is set directly on app object too as requested
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database_v2.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 

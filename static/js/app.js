@@ -63,6 +63,31 @@ const app = {
         }
     },
 
+    // --- MOBILE SIDEBAR ---
+    toggleMobileSidebar: () => {
+        const sidebar = document.getElementById('mainSidebar');
+        const overlay = document.getElementById('mobileOverlay');
+
+        const isClosed = sidebar.classList.contains('-translate-x-full');
+
+        if (isClosed) {
+            // Open
+            sidebar.classList.remove('-translate-x-full');
+            overlay.classList.remove('hidden');
+            // Small delay to allow reflow so opacity transition triggers
+            requestAnimationFrame(() => {
+                overlay.classList.remove('opacity-0');
+            });
+        } else {
+            // Close
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('opacity-0');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 300); // Match transition duration
+        }
+    },
+
     toggleTheme: () => {
         const isDark = document.documentElement.classList.toggle('dark');
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
