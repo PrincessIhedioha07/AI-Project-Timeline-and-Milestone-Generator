@@ -22,6 +22,11 @@ CORS(app) # Enable CORS
 # --- CONFIGURATION ---
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev_key_123')
 app.secret_key = app.config['SECRET_KEY']
+app.config['PREFERRED_URL_SCHEME'] = 'https' # Ensure HTTPS for Vercel/Render
+
+# Fix for Vercel/Render behind proxy (HTTPS redirection)
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # --- DATABASE CONFIG ---
 # Check for Vercel/Render/Railway Postgres URL
@@ -240,7 +245,7 @@ def google_authorize():
         return redirect(url_for('index'))
     except Exception as e:
         print(f"Google Auth Error: {e}")
-        return "Authentication failed.", 400
+        return f"Authentication failed: {str(e)}", 400
 
 # --- AUTH ROUTES ---
 @app.route('/register', methods=['POST'])
