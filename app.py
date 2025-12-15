@@ -209,9 +209,9 @@ def google_authorize():
         # Use full URL since api_base_url was removed in favor of server_metadata_url
         user_info = google.get('https://www.googleapis.com/oauth2/v3/userinfo').json()
         
-        email = user_info['email']
-        name = user_info['name']
-        google_id = user_info['id']
+        email = user_info.get('email')
+        name = user_info.get('name')
+        google_id = user_info.get('sub') # OIDC standard subject identifier
         picture = user_info.get('picture')
 
         user = User.query.filter_by(google_id=google_id).first()
