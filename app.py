@@ -93,16 +93,26 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # --- AI SERVICE ---
-def generate_gemini_timeline(project_desc, deadline_str):
+def generate_gemini_timeline(project_desc, deadline_str, duration_days=None):
     """
     Calls Gemini Pro to generate a project plan in JSON.
     """
     try:
         # Prompt construction
+        # Calculate days for context
+        duration_days = duration_days or "Unknown"
+        
         prompt = f"""
         You are an expert Senior Technical Project Manager. 
         Create a detailed project timeline for: "{project_desc}".
         Target Deadline: {deadline_str}.
+        Total Project Duration: {duration_days} days.
+
+        CRITICAL INSTRUCTIONS:
+        1. Calculate the number of days between today and {deadline_str}.
+        2. STRICTLY allocate time to each phase as a percentage of that total duration. 
+        3. Do NOT use default "1 Week" or "2 Weeks" unless it fits the percentage allocation.
+        4. The Sum of all phase durations MUST be less than or equal to {duration_days} days.
         
         Output stricly VALID JSON with this structure:
         {{
@@ -166,7 +176,13 @@ def generate():
     if not desc or not deadline:
         return jsonify({"error": "Missing input"}), 400
         
-    result = generate_gemini_timeline(desc, deadline)
+    try:
+        deadline_date = datetime.strptime(deadline, '%Y-%m-%d')
+        duration_days = (deadline_date - datetime.now()).days
+    except:
+        duration_days = 30 # Default fallback
+        
+    result = generate_gemini_timeline(desc, deadline, duration_days)
     
     # Save if logged in
     if current_user.is_authenticated and 'error' not in result:

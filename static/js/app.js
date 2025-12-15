@@ -447,6 +447,9 @@ const app = {
 
     simulateLoadingSteps: () => {
         const stepsContainer = document.getElementById('loadingSteps');
+        const progressBar = document.getElementById('loadingProgressBar');
+        const progressText = document.getElementById('loadingProgressText');
+
         const steps = [
             { text: "Verifying project scope...", color: "text-blue-400" },
             { text: "Allocating AI resources...", color: "text-purple-400" },
@@ -456,8 +459,25 @@ const app = {
 
         stepsContainer.innerHTML = '';
         let stepIndex = 0;
+        let progress = 0;
 
-        return setInterval(() => {
+        // Reset
+        progressBar.style.width = '0%';
+        progressText.innerText = '0%';
+
+        // Smooth Progress Bar Interval (0 to 90%)
+        const progressInterval = setInterval(() => {
+            if (progress < 90) {
+                // Add random increments for realism
+                const increment = Math.random() * 2;
+                progress = Math.min(progress + increment, 90); // Cap at 90%
+                progressBar.style.width = `${progress}%`;
+                progressText.innerText = `${Math.round(progress)}%`;
+            }
+        }, 100);
+
+        // Steps Interval
+        const stepsInterval = setInterval(() => {
             if (stepIndex >= steps.length) return;
             const step = steps[stepIndex];
             const el = document.createElement('div');
@@ -469,6 +489,8 @@ const app = {
             stepsContainer.appendChild(el);
             stepIndex++;
         }, 1200);
+
+        return { progressInterval, stepsInterval };
     },
 
     generatePlan: async () => {
@@ -484,7 +506,7 @@ const app = {
         document.getElementById('loadingOverlay').classList.remove('hidden');
         document.getElementById('loadingOverlay').classList.add('flex');
 
-        const loadingInterval = app.simulateLoadingSteps();
+        const loadingIntervals = app.simulateLoadingSteps();
 
         try {
             const response = await fetch('/generate', {
@@ -494,7 +516,13 @@ const app = {
             });
             const data = await response.json();
 
-            clearInterval(loadingInterval);
+            clearInterval(loadingIntervals.progressInterval);
+            clearInterval(loadingIntervals.stepsInterval);
+
+            // Fast forward to 100%
+            document.getElementById('loadingProgressBar').style.width = '100%';
+            document.getElementById('loadingProgressText').innerText = '100%';
+
             if (data.error) throw new Error(data.error);
 
             app.currentData = data;
@@ -508,7 +536,8 @@ const app = {
             }, 500);
 
         } catch (error) {
-            clearInterval(loadingInterval);
+            clearInterval(loadingIntervals.progressInterval);
+            clearInterval(loadingIntervals.stepsInterval);
             console.error(error);
             app.showNotification("Generation failed: " + error.message, "error");
 
