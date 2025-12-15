@@ -206,7 +206,8 @@ def google_login():
 def google_authorize():
     try:
         token = google.authorize_access_token()
-        user_info = google.get('userinfo').json()
+        # Use full URL since api_base_url was removed in favor of server_metadata_url
+        user_info = google.get('https://www.googleapis.com/oauth2/v3/userinfo').json()
         
         email = user_info['email']
         name = user_info['name']
