@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Timeline Generator | ClickUp Style</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+
+    <!-- Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "brand-purple": "#7b68ee",
+                        "brand-purple-dark": "#5f48ea",
+                        "sidebar-bg": "#242938",
+                        "sidebar-hover": "#2f3646",
+                        "main-bg": "#f7f8f9",
+                        "surface": "#ffffff",
+                        "text-main": "#292d34",
+                        "text-muted": "#7c828d",
+                        "border-light": "#e6e9f0",
+                        "success": "#2ecc71",
+                        "warning": "#f1c40f",
+                    },
+                    fontFamily: {
+                        "sans": ["Manrope", "sans-serif"],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'slide-up': 'slideUp 0.4s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(10px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        }
+                    }
+                },
+            },
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Manrope', sans-serif;
+            /* background-color handled by tailwind classes */
+        }
+
+        /* Sidebar Scrollbar */
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background: #3d4455;
+            border-radius: 4px;
+        }
+
+        /* Card Styles */
+        .task-card {
+            background: white;
+            border: 1px solid #e6e9f0;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .task-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-color: #7b68ee;
+            transform: translateY(-2px);
+        }
+
+        /* Glass Modal */
+        .glass-modal {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid #e6e9f0;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body class="flex h-screen overflow-hidden text-sm relative bg-main-bg dark:bg-[#0f172a] text-text-main">
+
+    <!-- Background Animation Canvas -->
+    <canvas id="bgCanvas" class="fixed inset-0 w-full h-full z-0 pointer-events-none"></canvas>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"
+        class="pointer-events-none fixed top-4 right-4 z-[100] flex flex-col items-end gap-2"></div>
+
+    <!-- SIDEBAR -->
+    <aside
+        class="w-64 bg-sidebar-bg flex flex-col flex-shrink-0 transition-all duration-300 relative z-10 bg-opacity-95 backdrop-blur-sm">
+        <!-- Logo -->
+        <div class="h-16 flex items-center px-6 border-b border-white/5">
+            <div class="w-8 h-8 bg-brand-purple rounded-md flex items-center justify-center mr-3 text-white">
+                <span class="material-symbols-outlined text-lg">timeline</span>
+            </div>
+            <span class="text-white font-bold text-lg tracking-wide">TimelineAi</span>
+        </div>
+
+        <!-- Scrollable Nav -->
+        <div class="flex-1 sidebar-scroll overflow-y-auto py-4">
+            <div class="px-4 mb-6">
+                <button onclick="location.reload()"
+                    class="w-full flex items-center gap-3 px-3 py-2 text-white/90 bg-brand-purple rounded-lg hover:bg-brand-purple-dark transition-colors font-semibold">
+                    <span class="material-symbols-outlined text-[20px]">add</span>
+                    New Roadmap
+                </button>
+            </div>
+
+            <nav class="px-2 space-y-1">
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-white/80 rounded-md bg-white/5 font-medium">
+                    <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                    Dashboard
+                </a>
+                <a href="#" onclick="app.showHistory()"
+                    class="flex items-center gap-3 px-3 py-2 text-text-muted hover:text-white hover:bg-white/5 rounded-md transition-colors"
+                    id="historyLink">
+                    <span class="material-symbols-outlined text-[20px]">history</span>
+                    History
+                </a>
+                <button onclick="app.toggleTheme()"
+                    class="w-full flex items-center gap-3 px-3 py-2 text-text-muted hover:text-white hover:bg-white/5 rounded-md transition-colors group text-left">
+                    <span class="material-symbols-outlined text-[20px] group-hover:text-brand-purple transition-colors"
+                        id="themeIcon">dark_mode</span>
+                    <span class="font-medium" id="themeText">Dark Mode</span>
+                </button>
+                <a href="#templates" onclick="app.showTemplates()"
+                    class="flex items-center gap-3 px-3 py-2 text-text-muted hover:text-white hover:bg-white/5 rounded-md transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">folder_open</span>
+                    Templates
+                </a>
+            </nav>
+
+            <div class="mt-8 px-4">
+                <h3 class="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Workspace</h3>
+                <nav class="space-y-1">
+                    <a href="#" onclick="app.showHistory()"
+                        class="flex items-center gap-3 px-2 py-1.5 text-text-muted hover:text-white text-xs transition-colors">
+                        <span class="w-2 h-2 rounded-full bg-success"></span>
+                        Active Projects
+                    </a>
+                    <a href="#" onclick="app.showTemplates()"
+                        class="flex items-center gap-3 px-2 py-1.5 text-text-muted hover:text-white text-xs transition-colors">
+                        <span class="w-2 h-2 rounded-full bg-warning"></span>
+                        Planning
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- User Profile -->
+        <div class="p-4 border-t border-white/5">
+            <div id="authButtons" class="flex flex-col gap-2">
+                <button onclick="app.showAuthModal()"
+                    class="w-full py-2 px-4 border border-white/20 rounded-md text-white hover:bg-white/5 transition-colors text-xs font-bold">
+                    Log In / Sign Up
+                </button>
+            </div>
+
+            <div id="userMenu" class="hidden flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-brand-purple flex items-center justify-center text-white font-bold text-xs"
+                    id="userAvatar">U</div>
+                <div class="flex-1 overflow-hidden">
+                    <p class="text-white text-xs font-semibold truncate" id="displayUsername">User</p>
+                    <p class="text-text-muted text-[10px] truncate">Free Plan</p>
+                </div>
+                <button onclick="app.logout()" class="text-text-muted hover:text-white">
+                    <span class="material-symbols-outlined text-[18px]">logout</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main
+        class="flex-1 flex flex-col bg-white/80 dark:bg-slate-900/60 backdrop-blur-md overflow-hidden relative z-10 transition-colors duration-300">
+
+        <!-- Header -->
+        <header class="h-16 bg-surface border-b border-border-light flex items-center justify-between px-6 shrink-0">
+            <div class="flex items-center gap-4">
+                <h2 class="text-xl font-bold text-text-main" id="pageTitle">New Roadmap</h2>
+            </div>
+            <div class="flex items-center gap-3">
+                <button
+                    class="p-2 text-text-muted hover:text-brand-purple hover:bg-brand-purple/5 rounded-full transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">help</span>
+                </button>
+                <div class="relative">
+                    <button onclick="app.toggleNotifications()"
+                        class="p-2 text-text-muted hover:text-brand-purple hover:bg-brand-purple/5 rounded-full transition-colors relative">
+                        <span class="material-symbols-outlined text-[20px]">notifications</span>
+                        <span id="notificationBadge"
+                            class="hidden absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-surface"></span>
+                    </button>
+                    <!-- Dropdown -->
+                    <div id="notificationDropdown"
+                        class="hidden absolute right-0 top-full mt-2 w-80 bg-surface border border-border-light rounded-xl shadow-lg z-50 overflow-hidden animate-fade-in">
+                        <div class="p-3 border-b border-border-light flex justify-between items-center bg-gray-50/50">
+                            <h4 class="text-xs font-bold text-text-main uppercase tracking-wider">Notifications</h4>
+                            <button onclick="app.clearNotifications()"
+                                class="text-[10px] text-brand-purple hover:underline font-bold">Clear All</button>
+                        </div>
+                        <div id="notificationList" class="max-h-64 overflow-y-auto">
+                            <!-- Items populated by JS -->
+                            <div class="p-4 text-center text-text-muted text-xs">No notifications yet</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Srcollable -->
+        <div class="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col min-h-0 relative">
+
+            <!-- VIEW 1: Input Form -->
+            <div id="inputSection" class="w-full max-w-2xl mx-auto my-auto animate-fade-in shrink-0 relative z-20">
+                <div class="bg-surface rounded-xl shadow-sm border border-border-light p-6 mb-8">
+                    <h1 class="text-3xl font-extrabold text-text-main mb-3">What are we building today?</h1>
+                    <p class="text-text-muted mb-8">Describe your project goal, requirements, and tech stack. The more
+                        specific, the better.</p>
+
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-xs font-bold text-text-muted uppercase mb-2">Project
+                                Description</label>
+                            <textarea id="projectDesc" rows="4"
+                                class="w-full bg-main-bg border-border-light rounded-lg p-4 text-text-main focus:ring-2 focus:ring-brand-purple focus:border-transparent transition-all font-medium resize-none placeholder:text-gray-400"
+                                placeholder="e.g., A SaaS platform for veterinary clinics to manage appointments..."></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-xs font-bold text-text-muted uppercase mb-2">Target
+                                    Deadline</label>
+                                <input type="date" id="deadline"
+                                    class="w-full bg-main-bg border-border-light rounded-lg p-3 text-text-main focus:ring-2 focus:ring-brand-purple focus:border-transparent transition-all">
+                            </div>
+                            <div class="flex items-end">
+                                <button id="generateBtn"
+                                    class="w-full h-[46px] bg-brand-purple hover:bg-brand-purple-dark text-white font-bold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined text-sm">auto_awesome</span>
+                                    Generate Plan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div
+                        class="p-6 bg-surface rounded-xl border border-border-light flex flex-col items-center text-center">
+                        <div
+                            class="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center mb-3">
+                            <span class="material-symbols-outlined">network_node</span>
+                        </div>
+                        <h4 class="font-bold text-text-main mb-1">Smart Phases</h4>
+                        <p class="text-xs text-text-muted">Automatically breaks down projects into logical milestones.
+                        </p>
+                    </div>
+                    <div
+                        class="p-6 bg-surface rounded-xl border border-border-light flex flex-col items-center text-center">
+                        <div
+                            class="w-10 h-10 rounded-full bg-purple-50 text-brand-purple flex items-center justify-center mb-3">
+                            <span class="material-symbols-outlined">psychology</span>
+                        </div>
+                        <h4 class="font-bold text-text-main mb-1">AI Insights</h4>
+                        <p class="text-xs text-text-muted">Get specific technical advice for every single step.</p>
+                    </div>
+                    <div
+                        class="p-6 bg-surface rounded-xl border border-border-light flex flex-col items-center text-center">
+                        <div
+                            class="w-10 h-10 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center mb-3">
+                            <span class="material-symbols-outlined">warning</span>
+                        </div>
+                        <h4 class="font-bold text-text-main mb-1">Risk Analysis</h4>
+                        <p class="text-xs text-text-muted">Identify potential bottlenecks before they happen.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: Templates Section (New) -->
+            <div id="templatesSection" class="hidden max-w-6xl mx-auto animate-fade-in pb-20">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h1 class="text-3xl font-extrabold text-text-main mb-2">Project Templates</h1>
+                        <p class="text-text-muted">Choose a starting point for your next big idea.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="templatesGrid">
+                    <!-- Templates populated by JS -->
+                </div>
+            </div>
+
+            <!-- VIEW 3: Premium Dark Loading Overlay (Fixed) -->
+            <div id="loadingOverlay"
+                class="hidden fixed inset-0 z-[60] flex-col items-center justify-center bg-[#101622]/95 backdrop-blur-md transition-all duration-500 dark">
+                <div class="relative flex items-center justify-center mb-16">
+                    <div class="absolute inset-0 bg-primary/20 blur-[80px] rounded-full w-80 h-80 animate-pulse"></div>
+                    <div class="absolute inset-0 bg-purple-600/10 blur-[60px] rounded-full w-64 h-64 mix-blend-screen">
+                    </div>
+                    <div
+                        class="absolute w-[280px] h-[280px] rounded-full border border-white/5 border-t-primary/40 border-r-primary/40 animate-[spin_4s_linear_infinite]">
+                    </div>
+                    <div
+                        class="absolute w-[220px] h-[220px] rounded-full border border-white/5 border-b-purple-500/40 border-l-purple-500/40 animate-[spin_5s_linear_infinite_reverse]">
+                    </div>
+                    <div
+                        class="absolute w-[180px] h-[180px] rounded-full border border-primary/20 bg-primary/5 animate-pulse">
+                    </div>
+
+                    <div
+                        class="relative z-10 w-32 h-32 rounded-full bg-[#151b26] border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden group">
+                        <div
+                            class="absolute inset-0 opacity-20 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:16px_16px]">
+                        </div>
+                        <div
+                            class="absolute w-full h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent animate-scan z-20">
+                        </div>
+                        <span
+                            class="material-symbols-outlined text-6xl text-transparent bg-clip-text bg-gradient-to-tr from-indigo-400 to-purple-400 relative z-30 drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]">psychology</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-center gap-6 text-center z-10 max-w-lg mx-auto px-6 font-display">
+                    <div class="flex flex-col gap-2">
+                        <h2
+                            class="text-3xl md:text-4xl font-bold text-white tracking-tight flex items-center justify-center gap-2">
+                            Generating Timeline
+                        </h2>
+                        <p class="text-slate-400 text-sm md:text-base font-medium">
+                            <span class="text-primary">AI</span> is analyzing project parameters & estimating milestones
+                        </p>
+                    </div>
+                    <div class="w-full max-w-xs flex flex-col gap-2">
+                        <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden relative">
+                            <div class="absolute inset-y-0 left-0 h-full w-1/2 bg-gradient-to-r from-indigo-500 via-primary to-purple-500 rounded-full animate-shimmer"
+                                style="width: 60%">
+                                <div class="absolute inset-0 bg-white/30 w-full h-full animate-pulse"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500 font-mono mt-1">
+                            <span>PROCESSING_DATA</span>
+                            <span>60%</span>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Steps for effect -->
+                    <div class="mt-8 flex flex-col gap-2 w-full max-w-xs opacity-80" id="loadingSteps">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: Results Timeline -->
+            <div id="resultSection" class="hidden max-w-5xl mx-auto pb-20 animate-slide-up">
+
+                <!-- Project Header -->
+                <div
+                    class="bg-surface rounded-xl border border-border-light p-6 mb-8 flex flex-col md:flex-row justify-between items-start gap-6 shadow-sm">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                            <h1 class="text-2xl font-bold text-text-main" id="resProjectTitle">Project Title</h1>
+                        </div>
+                    </div>
+                    <p class="text-text-muted leading-relaxed" id="resExecSummary">Summary...</p>
+                </div>
+
+                <div class="flex flex-col gap-3 shrink-0">
+                    <div id="riskBanner"
+                        class="hidden bg-orange-50 border border-orange-100 rounded-lg p-4 max-w-xs transition-all hover:shadow-md">
+                        <div class="flex items-center gap-2 mb-1 text-orange-700 font-bold text-sm">
+                            <span class="material-symbols-outlined text-[18px]">warning</span>
+                            Risk Assessment
+                        </div>
+                        <p id="riskMessage" class="text-xs text-orange-800/80 leading-snug">Timeline is aggressive.</p>
+                    </div>
+
+                    <button onclick="app.exportTimeline()"
+                        class="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-border-light rounded-lg text-text-main text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors group">
+                        <span
+                            class="material-symbols-outlined text-gra-400 group-hover:text-brand-purple">download</span>
+                        Export Timeline
+                    </button>
+                </div>
+            </div>
+
+            <!-- Timeline List -->
+            <div class="relative pl-6 border-l-2 border-border-light ml-4 space-y-8" id="timelineContainer">
+                <!-- Dynamic Cards Go Here -->
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- PREMIUM DARK MODAL (PHASE DETAILS) -->
+    <div id="modalOverlay"
+        class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 transition-opacity duration-300 dark">
+        <div
+            class="glass-panel w-full max-w-[800px] max-h-[90vh] flex flex-col rounded-2xl overflow-hidden animate-in zoom-in-95 duration-300 font-display bg-[#0f172a] border border-white/10 shadow-2xl">
+            <!-- Modal Header -->
+            <div class="flex items-start justify-between p-6 border-b border-white/10 bg-white/[0.02]">
+                <div class="flex flex-col gap-2">
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="px-2.5 py-1 rounded-full bg-primary/20 text-primary text-xs font-bold uppercase tracking-wider border border-primary/20"
+                            id="modalStatus">
+                            Phase
+                        </span>
+                        <span class="flex items-center gap-1 text-xs text-slate-400">
+                            <span class="material-symbols-outlined text-[16px]">calendar_today</span>
+                            <span id="modalDuration">2 Weeks</span>
+                        </span>
+                    </div>
+                    <h2 class="text-white text-2xl font-bold leading-tight tracking-[-0.015em]" id="modalTitle">
+                        Phase
+                        Title</h2>
+                </div>
+                <button onclick="app.closeModal()"
+                    class="text-slate-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <!-- Modal Content (Scrollable) -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar">
+                <div class="p-6 flex flex-col gap-8">
+
+                    <!-- AI Insight Box -->
+                    <div class="relative group">
+                        <div
+                            class="absolute -inset-0.5 bg-gradient-to-r from-pink-500 via-purple-500 to-primary rounded-xl opacity-75 blur-sm group-hover:opacity-100 transition duration-500">
+                        </div>
+                        <div class="relative flex items-start gap-4 p-5 bg-[#101622] rounded-xl border border-white/10">
+                            <div
+                                class="bg-gradient-to-br from-indigo-500 to-purple-600 w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-lg">
+                                <span class="material-symbols-outlined text-white text-[20px]">smart_toy</span>
+                            </div>
+                            <div class="flex flex-col gap-1.5 flex-1">
+                                <div class="flex justify-between items-center w-full">
+                                    <p
+                                        class="text-xs font-bold uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+                                        AI Insight</p>
+                                    <span class="text-[10px] text-slate-500">Just now</span>
+                                </div>
+                                <p class="text-sm text-slate-300 leading-relaxed" id="modalInsight">
+                                    Insight goes here...
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tasks -->
+                    <div class="flex flex-col gap-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-white">Action Items</h3>
+                            <button onclick="app.checkAllTasks()"
+                                class="text-xs font-bold text-primary hover:text-white uppercase tracking-wider transition-colors">
+                                Check All
+                            </button>
+                        </div>
+                        <div class="flex flex-col divide-y divide-white/5 border border-white/10 rounded-xl bg-[#151b26]/50 overflow-hidden"
+                            id="modalTasksList">
+                            <!-- Tasks populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-6 border-t border-white/10 bg-white/[0.02] flex justify-end gap-3">
+                <button onclick="app.closeModal()"
+                    class="px-5 py-2.5 rounded-lg border border-white/10 bg-white/5 text-white text-sm font-medium hover:bg-white/10 transition-colors">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUTH MODAL -->
+    <div id="authModal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div class="bg-surface w-full max-w-sm rounded-xl shadow-2xl overflow-hidden p-8 animate-slide-up">
+            <div class="text-center mb-6">
+                <div
+                    class="w-12 h-12 bg-brand-purple rounded-lg flex items-center justify-center mx-auto mb-4 text-white">
+                    <span class="material-symbols-outlined text-2xl">lock</span>
+                </div>
+                <h2 class="text-2xl font-bold text-text-main mb-1" id="authTitle">Welcome Back</h2>
+                <p class="text-text-muted text-sm" id="authSubtitle">Login to access your projects.</p>
+            </div>
+
+            <div class="space-y-4">
+                <a href="/google/login"
+                    class="w-full h-10 rounded-lg border border-border-light bg-white hover:bg-gray-50 flex items-center justify-center gap-2 text-text-main font-bold transition-all shadow-sm">
+                    <img src="https://www.google.com/favicon.ico" alt="Google" class="w-4 h-4">
+                    Sign in with Google
+                </a>
+
+                <div class="relative flex items-center py-2">
+                    <div class="flex-grow border-t border-border-light"></div>
+                    <span class="flex-shrink-0 mx-4 text-xs text-text-muted font-bold uppercase">Or</span>
+                    <div class="flex-grow border-t border-border-light"></div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-text-muted uppercase mb-1">Username</label>
+                    <input type="text" id="authUsername"
+                        class="w-full bg-main-bg border border-border-light rounded-lg p-3 text-text-main focus:ring-2 focus:ring-brand-purple focus:border-transparent transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-text-muted uppercase mb-1">Password</label>
+                    <input type="password" id="authPassword"
+                        class="w-full bg-main-bg border border-border-light rounded-lg p-3 text-text-main focus:ring-2 focus:ring-brand-purple focus:border-transparent transition-all">
+                </div>
+
+                <button id="authActionBtn"
+                    class="w-full h-10 rounded-lg bg-brand-purple hover:bg-brand-purple-dark text-white font-bold transition-all shadow-md">
+                    Log In
+                </button>
+
+                <div class="text-center pt-2">
+                    <button id="authToggleBtn" class="text-xs text-brand-purple font-bold hover:underline">
+                        Don't have an account? Sign Up
+                    </button>
+                    <button onclick="app.closeAuthModal()"
+                        class="block w-full mt-3 text-xs text-text-muted hover:text-text-main">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EXPORT MODAL -->
+    <div id="exportModal"
+        class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity duration-300">
+        <div
+            class="bg-surface w-full max-w-md rounded-2xl shadow-2xl border border-white/10 overflow-hidden animate-slide-up">
+            <div class="p-6 border-b border-border-light flex justify-between items-center bg-gray-50/50">
+                <h3 class="font-bold text-lg text-text-main">Export Timeline</h3>
+                <button onclick="app.closeExportModal()" class="text-text-muted hover:text-text-main">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-6">
+                <!-- Template Selection -->
+                <div>
+                    <label class="block text-xs font-bold text-text-muted uppercase mb-3">Export Style</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="exportStyle" value="light" checked class="peer sr-only">
+                            <div
+                                class="p-3 rounded-lg border border-border-light peer-checked:border-brand-purple peer-checked:bg-brand-purple/5 hover:border-brand-purple/50 transition-all text-center">
+                                <div class="w-full h-12 bg-gray-100 rounded mb-2 border border-gray-200"></div>
+                                <span class="text-sm font-medium text-text-main">Standard Light</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="exportStyle" value="dark" class="peer sr-only">
+                            <div
+                                class="p-3 rounded-lg border border-border-light peer-checked:border-brand-purple peer-checked:bg-brand-purple/5 hover:border-brand-purple/50 transition-all text-center">
+                                <div class="w-full h-12 bg-[#101622] rounded mb-2 border border-gray-700"></div>
+                                <span class="text-sm font-medium text-text-main">Premium Dark</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Format Selection -->
+                <div>
+                    <label class="block text-xs font-bold text-text-muted uppercase mb-3">File Format</label>
+                    <div class="space-y-2">
+                        <label
+                            class="flex items-center p-3 rounded-lg border border-border-light hover:bg-gray-50 cursor-pointer group transition-colors">
+                            <input type="radio" name="exportFormat" value="png" checked
+                                class="text-brand-purple focus:ring-brand-purple border-gray-300">
+                            <div class="ml-3 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-blue-500">image</span>
+                                <div>
+                                    <p class="text-sm font-bold text-text-main">Image (PNG)</p>
+                                    <p class="text-xs text-text-muted">Best for sharing on Slack/Teams</p>
+                                </div>
+                            </div>
+                        </label>
+                        <label
+                            class="flex items-center p-3 rounded-lg border border-border-light hover:bg-gray-50 cursor-pointer group transition-colors">
+                            <input type="radio" name="exportFormat" value="pdf"
+                                class="text-brand-purple focus:ring-brand-purple border-gray-300">
+                            <div class="ml-3 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-red-500">picture_as_pdf</span>
+                                <div>
+                                    <p class="text-sm font-bold text-text-main">Document (PDF)</p>
+                                    <p class="text-xs text-text-muted">Best for reports and printing</p>
+                                </div>
+                            </div>
+                        </label>
+                        <label
+                            class="flex items-center p-3 rounded-lg border border-border-light hover:bg-gray-50 cursor-pointer group transition-colors">
+                            <input type="radio" name="exportFormat" value="docx"
+                                class="text-brand-purple focus:ring-brand-purple border-gray-300">
+                            <div class="ml-3 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-blue-700">description</span>
+                                <div>
+                                    <p class="text-sm font-bold text-text-main">Word (DOCX)</p>
+                                    <p class="text-xs text-text-muted">Best for editing text</p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-border-light bg-gray-50/50 flex justify-end gap-3">
+                <button onclick="app.closeExportModal()"
+                    class="px-4 py-2 text-sm font-bold text-text-muted hover:text-text-main transition-colors">Cancel</button>
+                <button onclick="app.confirmExport()"
+                    class="px-6 py-2 bg-brand-purple hover:bg-brand-purple-dark text-white text-sm font-bold rounded-lg shadow-sm transition-all flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm">download</span>
+                    Download
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- HISTORY MODAL -->
+    <div id="historyModal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div
+            class="bg-surface w-full max-w-2xl rounded-xl shadow-2xl border border-border-light flex flex-col max-h-[85vh] animate-slide-up">
+            <div class="flex items-center justify-between p-6 border-b border-border-light">
+                <h2 class="text-lg font-bold text-text-main">Workspace History</h2>
+                <button onclick="app.closeHistoryModal()" class="text-text-muted hover:text-text-main">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6 bg-main-bg">
+                <div id="historyList" class="space-y-3">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
+</body>
+
+</html>
