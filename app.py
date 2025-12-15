@@ -31,6 +31,12 @@ if db_url:
     # Fix incompatible protocol for SQLAlchemy
     if db_url.startswith("postgres://"):
         db_url = db_url.replace("postgres://", "postgresql://", 1)
+    
+    # Fix: Remove 'supa' parameter which causes 'invalid dsn' in psycopg2
+    if 'supa=' in db_url:
+        # Simple string replacement for the specific case seen
+        db_url = db_url.replace('&supa=base-pooler.x', '').replace('?supa=base-pooler.x', '')
+        
     app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 else:
     # Fallback to local SQLite
