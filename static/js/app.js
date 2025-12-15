@@ -716,17 +716,16 @@ const app = {
                 data.phases.forEach(phase => {
                     // Phase Header Row
                     tableBody.push([
-                        { content: phase.name.toUpperCase(), colSpan: 4, styles: { fillColor: [240, 240, 240], fontStyle: 'bold', textColor: [50, 50, 50] } }
+                        { content: `${phase.name.toUpperCase()} (Duration: ${phase.duration})`, colSpan: 3, styles: { fillColor: [240, 240, 240], fontStyle: 'bold', textColor: [50, 50, 50] } }
                     ]);
 
                     // Task Rows
                     if (phase.tasks) {
                         phase.tasks.forEach(task => {
                             tableBody.push([
-                                phase.name, // Phase Name (Col 1)
+                                "", // Identation for Phase
                                 task.name,  // Milestone/Task (Col 2)
-                                phase.duration, // Duration (Col 3)
-                                task.dependencies || "-" // Dependencies (Col 4)
+                                task.dependencies || "-" // Dependencies (Col 3)
                             ]);
                         });
                     }
@@ -735,16 +734,15 @@ const app = {
 
             doc.autoTable({
                 startY: finalY,
-                head: [['Phase', 'Milestone/Task', 'Duration', 'Dependencies']],
+                head: [['Phase', 'Milestone/Task', 'Dependencies']],
                 body: tableBody,
                 theme: 'grid',
                 headStyles: { fillColor: [123, 104, 238], textColor: 255, fontStyle: 'bold' }, // Brand Purple
                 styles: { fontSize: 9, cellPadding: 3, overflow: 'linebreak' },
                 columnStyles: {
-                    0: { fontStyle: 'bold', width: 40 },
-                    1: { width: 70 },
-                    2: { width: 30 },
-                    3: { width: 40 }
+                    0: { fontStyle: 'bold', width: 20 },
+                    1: { width: 100 },
+                    2: { width: 60 }
                 },
                 margin: { top: 20, bottom: 20 }
             });
