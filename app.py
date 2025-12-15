@@ -223,33 +223,41 @@ def google_authorize():
 # --- AUTH ROUTES ---
 @app.route('/register', methods=['POST'])
 def register():
-    data = request.json
-    username = data.get('username')
-    password = data.get('password')
-    
-    if User.query.filter_by(username=username).first():
-        return jsonify({"error": "User already exists"}), 400
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
         
-    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(username=username, password=hashed_password)
-    db.session.add(new_user)
-    db.session.commit()
-    
-    login_user(new_user)
-    return jsonify({"message": "Registered successfully", "username": username})
+        if User.query.filter_by(username=username).first():
+            return jsonify({"error": "User already exists"}), 400
+            
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        new_user = User(username=username, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+        
+        login_user(new_user)
+        return jsonify({"message": "Registered successfully", "username": username})
+    except Exception as e:
+        print(f"Register Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.json
-    username = data.get('username')
-    password = data.get('password')
-    
-    user = User.query.filter_by(username=username).first()
-    if user and user.password and bcrypt.check_password_hash(user.password, password):
-        login_user(user)
-        return jsonify({"message": "Login successful", "username": username})
-    
-    return jsonify({"error": "Invalid credentials"}), 401
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
+        
+        user = User.query.filter_by(username=username).first()
+        if user and user.password and bcrypt.check_password_hash(user.password, password):
+            login_user(user)
+            return jsonify({"message": "Login successful", "username": username})
+        
+        return jsonify({"error": "Invalid credentials"}), 401
+    except Exception as e:
+        print(f"Login Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/logout', methods=['POST', 'GET']) # Allow GET for easier logout link
 @login_required
@@ -291,6 +299,26 @@ def auth_status():
             "profile_pic": current_user.profile_pic
         })
     return jsonify({"logged_in": False})
+
+@app.route('/debug/db', methods=['GET'])
+def debug_db():
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        
+        # Masked URI
+        uri = app.config['SQLALCHEMY_DATABASE_URI']
+        masked_uri = uri.split('@')[-1] if '@' in uri else "sqlite"
+        
+        return jsonify({
+            "status": "connected",
+            "tables": tables,
+            "db_uri_masked": masked_uri,
+            "user_count": User.query.count() if 'user' in tables else "N/A"
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 # --- SERVERLESS CHECK ---
