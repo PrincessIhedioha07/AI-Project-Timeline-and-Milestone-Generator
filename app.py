@@ -69,7 +69,7 @@ google = oauth.register(
 )
 
 # --- GEMINI API SETUP ---
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyAAf1eX7_9FLid1o7UhVJqdn1poi4wpXTg")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
 
 # --- MODELS ---
