@@ -19,7 +19,7 @@
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -120,7 +120,7 @@
             <div class="w-8 h-8 bg-brand-purple rounded-md flex items-center justify-center mr-3 text-white">
                 <span class="material-symbols-outlined text-lg">timeline</span>
             </div>
-            <span class="text-white font-bold text-lg tracking-wide">TimelineAi</span>
+            <span class="text-white font-bold text-lg tracking-wide">TimelineAI</span>
         </div>
 
         <!-- Scrollable Nav -->
@@ -560,97 +560,7 @@
         </div>
     </div>
 
-    <!-- EXPORT MODAL -->
-    <div id="exportModal"
-        class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity duration-300">
-        <div
-            class="bg-surface w-full max-w-md rounded-2xl shadow-2xl border border-white/10 overflow-hidden animate-slide-up">
-            <div class="p-6 border-b border-border-light flex justify-between items-center bg-gray-50/50">
-                <h3 class="font-bold text-lg text-text-main">Export Timeline</h3>
-                <button onclick="app.closeExportModal()" class="text-text-muted hover:text-text-main">
-                    <span class="material-symbols-outlined">close</span>
-                </button>
-            </div>
 
-            <div class="p-6 space-y-6">
-                <!-- Template Selection -->
-                <div>
-                    <label class="block text-xs font-bold text-text-muted uppercase mb-3">Export Style</label>
-                    <div class="grid grid-cols-2 gap-3">
-                        <label class="cursor-pointer">
-                            <input type="radio" name="exportStyle" value="light" checked class="peer sr-only">
-                            <div
-                                class="p-3 rounded-lg border border-border-light peer-checked:border-brand-purple peer-checked:bg-brand-purple/5 hover:border-brand-purple/50 transition-all text-center">
-                                <div class="w-full h-12 bg-gray-100 rounded mb-2 border border-gray-200"></div>
-                                <span class="text-sm font-medium text-text-main">Standard Light</span>
-                            </div>
-                        </label>
-                        <label class="cursor-pointer">
-                            <input type="radio" name="exportStyle" value="dark" class="peer sr-only">
-                            <div
-                                class="p-3 rounded-lg border border-border-light peer-checked:border-brand-purple peer-checked:bg-brand-purple/5 hover:border-brand-purple/50 transition-all text-center">
-                                <div class="w-full h-12 bg-[#101622] rounded mb-2 border border-gray-700"></div>
-                                <span class="text-sm font-medium text-text-main">Premium Dark</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Format Selection -->
-                <div>
-                    <label class="block text-xs font-bold text-text-muted uppercase mb-3">File Format</label>
-                    <div class="space-y-2">
-                        <label
-                            class="flex items-center p-3 rounded-lg border border-border-light hover:bg-gray-50 cursor-pointer group transition-colors">
-                            <input type="radio" name="exportFormat" value="png" checked
-                                class="text-brand-purple focus:ring-brand-purple border-gray-300">
-                            <div class="ml-3 flex items-center gap-2">
-                                <span class="material-symbols-outlined text-blue-500">image</span>
-                                <div>
-                                    <p class="text-sm font-bold text-text-main">Image (PNG)</p>
-                                    <p class="text-xs text-text-muted">Best for sharing on Slack/Teams</p>
-                                </div>
-                            </div>
-                        </label>
-                        <label
-                            class="flex items-center p-3 rounded-lg border border-border-light hover:bg-gray-50 cursor-pointer group transition-colors">
-                            <input type="radio" name="exportFormat" value="pdf"
-                                class="text-brand-purple focus:ring-brand-purple border-gray-300">
-                            <div class="ml-3 flex items-center gap-2">
-                                <span class="material-symbols-outlined text-red-500">picture_as_pdf</span>
-                                <div>
-                                    <p class="text-sm font-bold text-text-main">Document (PDF)</p>
-                                    <p class="text-xs text-text-muted">Best for reports and printing</p>
-                                </div>
-                            </div>
-                        </label>
-                        <label
-                            class="flex items-center p-3 rounded-lg border border-border-light hover:bg-gray-50 cursor-pointer group transition-colors">
-                            <input type="radio" name="exportFormat" value="docx"
-                                class="text-brand-purple focus:ring-brand-purple border-gray-300">
-                            <div class="ml-3 flex items-center gap-2">
-                                <span class="material-symbols-outlined text-blue-700">description</span>
-                                <div>
-                                    <p class="text-sm font-bold text-text-main">Word (DOCX)</p>
-                                    <p class="text-xs text-text-muted">Best for editing text</p>
-                                </div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-6 border-t border-border-light bg-gray-50/50 flex justify-end gap-3">
-                <button onclick="app.closeExportModal()"
-                    class="px-4 py-2 text-sm font-bold text-text-muted hover:text-text-main transition-colors">Cancel</button>
-                <button onclick="app.confirmExport()"
-                    class="px-6 py-2 bg-brand-purple hover:bg-brand-purple-dark text-white text-sm font-bold rounded-lg shadow-sm transition-all flex items-center gap-2">
-                    <span class="material-symbols-outlined text-sm">download</span>
-                    Download
-                </button>
-            </div>
-        </div>
-    </div>
 
 
     <!-- HISTORY MODAL -->

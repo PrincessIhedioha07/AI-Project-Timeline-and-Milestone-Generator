@@ -596,31 +596,12 @@ const app = {
 
     // --- EXPORT LOGIC ---
     exportTimeline: () => {
-        document.getElementById('exportModal').classList.remove('hidden');
-    },
-
-    closeExportModal: () => {
-        document.getElementById('exportModal').classList.add('hidden');
-    },
-
-    confirmExport: () => {
-        const format = document.querySelector('input[name="exportFormat"]:checked').value;
-        const style = document.querySelector('input[name="exportStyle"]:checked').value;
-        const resultSection = document.getElementById('resultSection');
-        const timelineContainer = document.getElementById('timelineContainer'); // Also capture this for PNG?
-
-        // For Image/DOCX, we ideally want the WHOLE result view. 
-        // Currently 'resultSection' is just the header. 
-        // Let's grab the parent of resultSection to cover everything?
-        // But for PDF, we will do purely data-driven generation as requested.
-
-        app.showNotification(`Exporting as ${format.toUpperCase()}...`, "info");
-        app.closeExportModal();
-
         const data = app.currentData;
         if (!data) return app.showNotification("No data to export", "error");
 
-        if (format === 'pdf') {
+        app.showNotification("Generating PDF...", "info");
+
+        try {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
@@ -703,49 +684,11 @@ const app = {
 
             doc.save("project_roadmap.pdf");
             app.showNotification("PDF Exported Successfully!", "success");
-            return;
+
+        } catch (e) {
+            console.error(e);
+            app.showNotification("PDF Export Failed. Ensure jspdf is loaded.", "error");
         }
-
-        // --- BACKWARD COMPATIBLE IMAGE/DOCX LOGIC (Simplified) ---
-        // Just keeping previous html2canvas logic for now as user prioritized PDF.
-        // Capturing resultSection primarily. 
-
-        const element = document.getElementById('resultSection');
-        // Note: Ideally we want to scroll capture or capture parent. Left as is for now.
-
-        const originalBg = element.style.backgroundColor;
-        const wasDark = document.documentElement.classList.contains('dark');
-
-        if (style === 'dark' && !wasDark) {
-            document.documentElement.classList.add('dark');
-            element.classList.add('dark');
-            element.style.backgroundColor = "#101622";
-            element.style.color = "white";
-        }
-
-        app.showNotification("Generating snapshot...", "info");
-
-        setTimeout(() => {
-            html2canvas(element, { scale: 2, backgroundColor: style === 'dark' ? "#101622" : "#f7f8f9" })
-                .then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = `project-summary-${style}.png`;
-                    link.href = canvas.toDataURL();
-                    link.click();
-
-                    if (style === 'dark' && !wasDark) {
-                        document.documentElement.classList.remove('dark');
-                        element.classList.remove('dark');
-                        element.style.backgroundColor = "";
-                        element.style.color = "";
-                    }
-                    app.showNotification("Snapshot downloaded!", "success");
-                }).catch(e => {
-                    console.error(e);
-                    app.showNotification("Snapshot failed", "error");
-                    if (style === 'dark' && !wasDark) document.documentElement.classList.remove('dark');
-                });
-        }, 500);
     }
 };
 document.addEventListener('DOMContentLoaded', app.init);
