@@ -293,11 +293,17 @@ def auth_status():
     return jsonify({"logged_in": False})
 
 
+# --- SERVERLESS CHECK ---
+@app.before_request
+def init_db():
+    if not getattr(app, '_db_initialized', False):
+        try:
+            db.create_all()
+            app._db_initialized = True
+        except Exception as e:
+            print(f"DB Init Error: {e}")
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True, port=5000)
-else:
-    # Ensure tables are created on production (Vercel) import
-    with app.app_context():
-        db.create_all()
