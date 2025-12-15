@@ -329,7 +329,8 @@ def init_db():
             db.create_all()
             app._db_initialized = True
         except Exception as e:
-            print(f"DB Init Error: {e}")
+            # Return error immediately so user sees it in browser
+            return jsonify({"error": "Database Initialization Failed", "details": str(e)}), 500
 
 if __name__ == '__main__':
     with app.app_context():
