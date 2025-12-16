@@ -535,7 +535,7 @@ const app = {
                 document.getElementById('loadingOverlay').classList.add('hidden');
                 document.getElementById('loadingOverlay').classList.remove('flex');
                 document.getElementById('resultSection').classList.remove('hidden');
-                app.renderResults(data);
+                app.renderResults(app.currentData);
                 app.showNotification("Timeline generated successfully!", "success");
             }, 500);
 
