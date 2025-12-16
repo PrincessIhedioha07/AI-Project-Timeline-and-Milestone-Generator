@@ -66,6 +66,7 @@ const app = {
 
     // --- MOBILE SIDEBAR ---
     toggleMobileSidebar: () => {
+        if (window.innerWidth >= 1024) return; // Ignore on Desktop
         const sidebar = document.getElementById('mainSidebar');
         const overlay = document.getElementById('mobileOverlay');
 
