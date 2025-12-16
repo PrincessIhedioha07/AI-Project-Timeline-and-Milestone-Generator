@@ -113,6 +113,7 @@ def generate_gemini_timeline(project_desc, deadline_str, duration_days=None):
         2. STRICTLY allocate time to each phase as a percentage of that total duration. 
         3. Do NOT use default "1 Week" or "2 Weeks" unless it fits the percentage allocation.
         4. The Sum of all phase durations MUST be less than or equal to {duration_days} days.
+        5. For "risk_assessment", provide a REALISTIC analysis based on the deadline/complexity.
         
         Output stricly VALID JSON with this structure:
         {{
@@ -120,8 +121,8 @@ def generate_gemini_timeline(project_desc, deadline_str, duration_days=None):
             "executive_summary": "string",
             "risk_assessment": {{
                 "level": "Low/Medium/High",
-                "message": "string",
-                "mitigation": "string"
+                "message": "Detailed warning about specific pitfalls (e.g. 'Testing phase compressed').",
+                "mitigation": "Actionable advice to reduce risk."
             }},
             "phases": [
                 {{
@@ -130,7 +131,7 @@ def generate_gemini_timeline(project_desc, deadline_str, duration_days=None):
                     "color": "blue|purple|green|orange",
                     "description": "Short phase description",
                     "tasks": [
-                        {{ "name": "Task Name", "status": "Pending", "dependencies": "e.g. Task A" }}
+                        {{ "name": "Task Name", "status": "Pending", "dependencies": "e.g. Task A (or None)" }}
                     ],
                     "ai_insight": "Specific technical advice for this phase."
                 }}
@@ -185,6 +186,7 @@ def generate():
     result = generate_gemini_timeline(desc, deadline, duration_days)
     
     # Save if logged in
+    project_id = None
     if current_user.is_authenticated and 'error' not in result:
         new_project = Project(
             title=result.get('project_title', 'Untitled Project'),
@@ -193,8 +195,12 @@ def generate():
         )
         db.session.add(new_project)
         db.session.commit()
+        project_id = new_project.id
     
-    return jsonify(result)
+    return jsonify({
+        "project_data": result,
+        "project_id": project_id
+    })
 
 # --- GOOGLE AUTH ROUTES ---
 @app.route('/google/login')
@@ -311,6 +317,40 @@ def get_project(id):
     if project.user_id != current_user.id:
         return jsonify({"error": "Unauthorized"}), 403
     return jsonify(json.loads(project.data))
+
+@app.route('/project/<int:project_id>/toggle_task', methods=['POST'])
+@login_required
+def toggle_task(project_id):
+    project = Project.query.get_or_404(project_id)
+    if project.user_id != current_user.id:
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    try:
+        data = request.json
+        phase_idx = data.get('phase_index')
+        task_idx = data.get('task_index')
+        completed = data.get('completed') # boolean
+
+        if phase_idx is None or task_idx is None:
+             return jsonify({"error": "Missing indices"}), 400
+
+        project_data = json.loads(project.data)
+        
+        # Validation
+        if 0 <= phase_idx < len(project_data['phases']):
+            phase = project_data['phases'][phase_idx]
+            if 0 <= task_idx < len(phase['tasks']):
+                phase['tasks'][task_idx]['status'] = "Completed" if completed else "Pending"
+                
+                # Save back to DB
+                project.data = json.dumps(project_data)
+                db.session.commit()
+                return jsonify({"message": "Task updated", "status": phase['tasks'][task_idx]['status']})
+        
+        return jsonify({"error": "Invalid task or phase index"}), 400
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # Check auth status for frontend
 @app.route('/auth_status', methods=['GET'])
