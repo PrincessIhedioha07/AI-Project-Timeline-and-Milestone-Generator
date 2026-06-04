@@ -2,7 +2,8 @@ import google.generativeai as genai
 import os
 
 # Use the key from app.py
-GEMINI_API_KEY = "AIzaSyAAf1eX7_9FLid1o7UhVJqdn1poi4wpXTg"
+
+
 genai.configure(api_key=GEMINI_API_KEY)
 
 models_to_test = [
